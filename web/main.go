@@ -1,15 +1,24 @@
 package main
 
 import (
-	"github.com/berkay.ersoyy/go-products-example/pkg/models"
+	"log"
+
+	"github.com/berkay.ersoyy/go-products-example/pkg/handlers"
+	"github.com/gin-gonic/gin"
 )
 
-var products = []models.Product{
-	{Id: 1, Name: "Monster", Price: 25.0, Description: "Abra a7"},
-	{Id: 2, Name: "Mac", Price: 55.0, Description: "M1"},
-	{Id: 3, Name: "Lenovo", Price: 15.0, Description: "Gaming"},
+func setup() *gin.Engine {
+	router := gin.Default()
+	router.GET("/products", handlers.GetProducts)
+	router.POST("/products", handlers.PostProduct)
+	router.GET("/products/:id", handlers.GetProductById)
+	router.DELETE("/products/:id", handlers.DeleteProduct)
+	router.PUT("/products/:id", handlers.UpdateProduct)
+
+	return router
 }
 
 func main() {
-
+	r := setup()
+	log.Fatal(r.Run("localhost:8080"))
 }
