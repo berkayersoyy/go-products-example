@@ -1,24 +1,38 @@
 package main
 
 import (
-	"log"
-
+	"github.com/berkay.ersoyy/go-products-example/pkg/database"
 	"github.com/berkay.ersoyy/go-products-example/pkg/handlers"
+	"github.com/berkay.ersoyy/go-products-example/pkg/repositories"
+	"github.com/berkay.ersoyy/go-products-example/pkg/services"
 	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
 )
 
-func setup() *gin.Engine {
+func setup(db *gorm.DB) *gin.Engine {
+
+	productRepository := repositories.ProductRepository{DB: db}
+	productService := services.ProductService{ProductRepository: productRepository}
+	// productApi := InitProductAPI(db)
+	productApi := handlers.ProductAPI{ProductService: productService}
 	router := gin.Default()
-	router.GET("/products", handlers.GetProducts)
-	router.POST("/products", handlers.PostProduct)
-	router.GET("/products/:id", handlers.GetProductById)
-	router.DELETE("/products/:id", handlers.DeleteProduct)
-	router.PUT("/products/:id", handlers.UpdateProduct)
+
+	router.GET("/products", productApi.GetAllProducts)
+	router.POST("/products", productApi.AddProduct)
+	router.GET("/products/:id", productApi.GetProductByID)
+	router.DELETE("/products/:id", productApi.DeleteProduct)
+	router.PUT("/products/:id", productApi.UpdateProduct)
 
 	return router
 }
 
 func main() {
-	r := setup()
-	log.Fatal(r.Run("localhost:8080"))
+	db := database.InitDb()
+	defer db.Close()
+	r := setup(db)
+	err := r.Run()
+	if err != nil {
+		panic(err)
+	}
+
 }

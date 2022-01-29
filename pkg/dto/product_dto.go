@@ -1,9 +1,7 @@
-package models
+package dto
 
-import "github.com/jinzhu/gorm"
-
-type Product struct {
-	gorm.Model
+type ProductDTO struct {
+	ID          uint    `json:"id,string,omitempty"`
 	Name        string  `json:"name"`
 	Price       float32 `json:"price"`
 	Description string  `json:"description"`
