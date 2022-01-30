@@ -10,6 +10,7 @@ import (
 	"github.com/berkay.ersoyy/go-products-example/pkg/models"
 	"github.com/berkay.ersoyy/go-products-example/pkg/services"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 )
 
 type ProductAPI struct {
@@ -41,7 +42,13 @@ func (p *ProductAPI) AddProduct(c *gin.Context) {
 		c.Status(http.StatusBadRequest)
 		return
 	}
-
+	validate := validator.New()
+	err = validate.Struct(product)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
+		c.Abort()
+		return
+	}
 	createdProduct := p.ProductService.AddProduct(product)
 
 	c.JSON(http.StatusOK, gin.H{"product": mappers.ToProductDTO(createdProduct)})
@@ -53,6 +60,13 @@ func (p *ProductAPI) UpdateProduct(c *gin.Context) {
 	if err != nil {
 		log.Fatalln(err)
 		c.Status(http.StatusBadRequest)
+		return
+	}
+	validate := validator.New()
+	err = validate.Struct(productDTO)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"Error": err.Error()})
+		c.Abort()
 		return
 	}
 
