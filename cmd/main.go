@@ -32,10 +32,12 @@ func setup(db *gorm.DB) *gin.Engine {
 	//router.Use(validators.ProductValidator())
 
 	//TODO Error handler can be add as a middleware
+	//TODO Swagger
 
 	//products
 	products := router.Group("/v1")
-	products.Use(middlewares.AuthorizeJWT(authService))
+
+	products.Use(middlewares.AuthorizeJWTMiddleware(authService))
 
 	products.GET("/products", productApi.GetAllProducts)
 	products.POST("/products", productApi.AddProduct)
