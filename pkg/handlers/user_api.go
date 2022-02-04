@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/berkay.ersoyy/go-products-example/pkg/dto"
-	"github.com/berkay.ersoyy/go-products-example/pkg/mappers"
-	"github.com/berkay.ersoyy/go-products-example/pkg/models"
-	"github.com/berkay.ersoyy/go-products-example/pkg/services"
+	"github.com/berkayersoyy/go-products-example/pkg/dto"
+	"github.com/berkayersoyy/go-products-example/pkg/mappers"
+	"github.com/berkayersoyy/go-products-example/pkg/models"
+	"github.com/berkayersoyy/go-products-example/pkg/services"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
@@ -20,6 +20,18 @@ type UserAPI struct {
 func ProvideUserAPI(u services.UserService) UserAPI {
 	return UserAPI{UserService: u}
 }
+
+// @BasePath /api/v1
+
+// GetAllUsers
+// @Summary Fetch all users from database
+// @Schemes
+// @Description Fetch all users
+// @Tags Users
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.User
+// @Router /v1/users/ [get]
 func (u *UserAPI) GetAllUsers(c *gin.Context) {
 	users := u.UserService.GetAllUsers()
 	c.JSON(http.StatusOK, gin.H{"users": users})

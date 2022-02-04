@@ -9,8 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/berkay.ersoyy/go-products-example/pkg/auth"
-	"github.com/berkay.ersoyy/go-products-example/pkg/database"
+	"github.com/berkayersoyy/go-products-example/pkg/auth"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-redis/redis/v7"
 	"github.com/twinj/uuid"
@@ -18,11 +17,8 @@ import (
 
 type AuthService struct{}
 
+//TODO could be singleton here
 var client *redis.Client
-
-func init() {
-	client = database.InitRedis()
-}
 
 func ExtractToken(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
@@ -91,6 +87,14 @@ func (a *AuthService) CreateToken(userid uint) (*auth.TokenDetails, error) {
 }
 
 func (a *AuthService) CreateAuth(userid uint, td *auth.TokenDetails) error {
+	dsn := os.Getenv("REDIS_HOST")
+	fmt.Println(dsn)
+	if len(dsn) == 0 {
+		dsn = "redis://redisdb:6379/"
+	}
+	client = redis.NewClient(&redis.Options{
+		Addr: dsn,
+	})
 	at := time.Unix(td.AtExpires, 0)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()

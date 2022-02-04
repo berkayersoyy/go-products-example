@@ -1,7 +1,7 @@
 package repositories
 
 import (
-	"github.com/berkay.ersoyy/go-products-example/pkg/models"
+	"github.com/berkayersoyy/go-products-example/pkg/models"
 	"github.com/jinzhu/gorm"
 )
 

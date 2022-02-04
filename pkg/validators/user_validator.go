@@ -3,7 +3,7 @@ package validators
 import (
 	"net/http"
 
-	"github.com/berkay.ersoyy/go-products-example/pkg/models"
+	"github.com/berkayersoyy/go-products-example/pkg/models"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )

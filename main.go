@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/berkay.ersoyy/go-products-example/pkg/database"
-	"github.com/berkay.ersoyy/go-products-example/pkg/handlers"
-	"github.com/berkay.ersoyy/go-products-example/pkg/middlewares"
-	"github.com/berkay.ersoyy/go-products-example/pkg/repositories"
-	"github.com/berkay.ersoyy/go-products-example/pkg/services"
+	"github.com/berkayersoyy/go-products-example/pkg/database"
+	"github.com/berkayersoyy/go-products-example/pkg/handlers"
+	"github.com/berkayersoyy/go-products-example/pkg/middlewares"
+	"github.com/berkayersoyy/go-products-example/pkg/repositories"
+	"github.com/berkayersoyy/go-products-example/pkg/services"
 	"github.com/gin-gonic/gin"
 	"github.com/jinzhu/gorm"
+	ginSwagger "github.com/swaggo/gin-swagger"
+	"github.com/swaggo/gin-swagger/swaggerFiles"
 )
 
 func setup(db *gorm.DB) *gin.Engine {
@@ -56,6 +58,8 @@ func setup(db *gorm.DB) *gin.Engine {
 	//auth
 	auth := router.Group("/v1")
 	auth.POST("/login", authApi.Login)
+
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
 	return router
 }

@@ -1,8 +1,8 @@
 package mappers
 
 import (
-	"github.com/berkay.ersoyy/go-products-example/pkg/dto"
-	"github.com/berkay.ersoyy/go-products-example/pkg/models"
+	"github.com/berkayersoyy/go-products-example/pkg/dto"
+	"github.com/berkayersoyy/go-products-example/pkg/models"
 )
 
 func ToUser(userDTO dto.UserDTO) models.User {

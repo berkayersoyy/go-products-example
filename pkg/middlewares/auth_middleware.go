@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/berkay.ersoyy/go-products-example/pkg/services"
+	"github.com/berkayersoyy/go-products-example/pkg/services"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )

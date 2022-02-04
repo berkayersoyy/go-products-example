@@ -1,0 +1,43 @@
+version: '3.4'
+
+services:
+  goproductsexample:
+    container_name: goproductsexample
+    image: goproductsexample
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - 8080:8080
+    environment:
+      REDIS_HOST: redis://redis:6379/
+      MYSQL_DSN: "root:x03121998X@tcp(mysql:3306)/godb"
+    depends_on:
+      - redis
+      - mysql
+    links:
+      - redis
+      - mysql
+  redis:
+    container_name: redis
+    image: redis
+    hostname: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server
+  mysql:
+    image: mysql
+    container_name: mysql
+    hostname: mysql
+    ports:
+      - "3306:3306"
+
+    environment:
+      MYSQL_USER: root
+      MYSQL_PASSWORD: x03121998X
+      MYSQL_ROOT_PASSWORD: x03121998X
+      MYSQL_DATABASE: godb
+      MYSQL_HOST: mysql
+    healthcheck:
+      test: mysqladmin ping -h 127.0.0.1 -u $$root --password=$$x03121998X

@@ -1,8 +1,8 @@
 package services
 
 import (
-	"github.com/berkay.ersoyy/go-products-example/pkg/models"
-	"github.com/berkay.ersoyy/go-products-example/pkg/repositories"
+	"github.com/berkayersoyy/go-products-example/pkg/models"
+	"github.com/berkayersoyy/go-products-example/pkg/repositories"
 )
 
 type ProductService struct {

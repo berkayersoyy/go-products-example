@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/berkay.ersoyy/go-products-example/pkg/dto"
-	"github.com/berkay.ersoyy/go-products-example/pkg/mappers"
-	"github.com/berkay.ersoyy/go-products-example/pkg/models"
-	"github.com/berkay.ersoyy/go-products-example/pkg/services"
+	"github.com/berkayersoyy/go-products-example/pkg/dto"
+	"github.com/berkayersoyy/go-products-example/pkg/mappers"
+	"github.com/berkayersoyy/go-products-example/pkg/models"
+	"github.com/berkayersoyy/go-products-example/pkg/services"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 )
