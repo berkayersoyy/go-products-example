@@ -1,4 +1,4 @@
-package auth
+package jwtutils
 
 type TokenDetails struct {
 	AccessToken  string

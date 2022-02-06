@@ -1,4 +1,4 @@
-package auth
+package jwtutils
 
 type AccessDetails struct {
 	AccessUuid string
