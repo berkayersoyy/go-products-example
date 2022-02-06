@@ -1,24 +1,33 @@
 package database
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/berkayersoyy/go-products-example/pkg/models"
+	config "github.com/berkayersoyy/go-products-example/pkg/utils/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
 )
 
-const DB_USERNAME = "root"
-const DB_PASSWORD = "x03121998X"
-const DB_NAME = "mysql"
-const DB_HOST = "127.0.0.1"
-const DB_PORT = "3306"
+// const DB_USERNAME = "root"
+// const DB_PASSWORD = "x03121998X"
+// const DB_NAME = "localhost"
+// const DB_HOST = "127.0.0.1"
+// const DB_PORT = "3306"
+
+var singletonMysql *gorm.DB
+
+func GetMysqlClient() *gorm.DB {
+	if singletonMysql == nil {
+		singletonMysql = InitDb()
+	}
+	return singletonMysql
+}
 
 func InitDb() *gorm.DB {
-	dsn := os.Getenv("MYSQL_DSN")
-	fmt.Println(dsn)
-	db, err := gorm.Open("mysql", "root:x03121998X@tcp(mysql:3306)/godb")
+	conf, err := config.LoadConfig("./")
+	if err != nil {
+		panic(err)
+	}
+	db, err := gorm.Open("mysql", conf.MysqlDSN)
 	if err != nil {
 		panic(err)
 	}

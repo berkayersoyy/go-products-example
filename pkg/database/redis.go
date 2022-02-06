@@ -1,17 +1,23 @@
 package database
 
 import (
-	"fmt"
-	"os"
-
+	config "github.com/berkayersoyy/go-products-example/pkg/utils/config"
 	"github.com/go-redis/redis/v7"
 )
 
+var singletonRedis *redis.Client
+
+func GetRedisClient() *redis.Client {
+	if singletonRedis == nil {
+		singletonRedis = InitRedis()
+	}
+	return singletonRedis
+}
+
 func InitRedis() *redis.Client {
-	dsn := os.Getenv("REDIS_HOST")
-	fmt.Println(dsn)
-	if len(dsn) == 0 {
-		dsn = "redis://redis:6379/"
+	conf, err := config.LoadConfig("./")
+	if err != nil {
+		panic(err)
 	}
 	client := redis.NewClient(&redis.Options{
 		Addr: dsn,

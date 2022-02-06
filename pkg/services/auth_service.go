@@ -4,12 +4,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/berkayersoyy/go-products-example/pkg/auth"
+	"github.com/berkayersoyy/go-products-example/pkg/database"
+	"github.com/berkayersoyy/go-products-example/pkg/utils/config"
+	jwtutils "github.com/berkayersoyy/go-products-example/pkg/utils/jwt"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/go-redis/redis/v7"
 	"github.com/twinj/uuid"
@@ -28,13 +29,18 @@ func ExtractToken(r *http.Request) string {
 	}
 	return ""
 }
+
 func (a *AuthService) ValidateToken(r *http.Request) (*jwt.Token, error) {
+	conf, err := config.LoadConfig("./")
+	if err != nil {
+		panic(err)
+	}
 	tokenString := ExtractToken(r)
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("ACCESS_SECRET")), nil
+		return []byte(conf.AccessSecret), nil
 	})
 	if err != nil {
 		return nil, err
@@ -51,50 +57,44 @@ func (a *AuthService) TokenValid(r *http.Request) error {
 	}
 	return nil
 }
-func (a *AuthService) CreateToken(userid uint) (*auth.TokenDetails, error) {
-	td := &auth.TokenDetails{}
+func (a *AuthService) CreateToken(userid uint) (*jwtutils.TokenDetails, error) {
+	conf, err := config.LoadConfig("./")
+	if err != nil {
+		panic(err)
+	}
+	td := &jwtutils.TokenDetails{}
 	td.AtExpires = time.Now().Add(time.Minute * 15).Unix()
 	td.AccessUuid = uuid.NewV4().String()
 
 	td.RtExpires = time.Now().Add(time.Hour * 24 * 7).Unix()
 	td.RefreshUuid = td.AccessUuid + "++" + strconv.Itoa(int(userid))
 
-	var err error
 	//Creating Access Token
-	os.Setenv("ACCESS_SECRET", "jdnfksdmfksd") //this should be in an env file
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["access_uuid"] = td.AccessUuid
 	atClaims["user_id"] = userid
 	atClaims["exp"] = td.AtExpires
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, atClaims)
-	td.AccessToken, err = at.SignedString([]byte(os.Getenv("ACCESS_SECRET")))
+	td.AccessToken, err = at.SignedString([]byte(conf.AccessSecret))
 	if err != nil {
 		return nil, err
 	}
 	//Creating Refresh Token
-	os.Setenv("REFRESH_SECRET", "mcmvmkmsdnfsdmfdsjf") //this should be in an env file
 	rtClaims := jwt.MapClaims{}
 	rtClaims["refresh_uuid"] = td.RefreshUuid
 	rtClaims["user_id"] = userid
 	rtClaims["exp"] = td.RtExpires
 	rt := jwt.NewWithClaims(jwt.SigningMethodHS256, rtClaims)
-	td.RefreshToken, err = rt.SignedString([]byte(os.Getenv("REFRESH_SECRET")))
+	td.RefreshToken, err = rt.SignedString([]byte(conf.RefreshSecret))
 	if err != nil {
 		return nil, err
 	}
 	return td, nil
 }
 
-func (a *AuthService) CreateAuth(userid uint, td *auth.TokenDetails) error {
-	dsn := os.Getenv("REDIS_HOST")
-	fmt.Println(dsn)
-	if len(dsn) == 0 {
-		dsn = "redis://redisdb:6379/"
-	}
-	client = redis.NewClient(&redis.Options{
-		Addr: dsn,
-	})
+func (a *AuthService) CreateAuth(userid uint, td *jwtutils.TokenDetails) error {
+	client = database.GetRedisClient()
 	at := time.Unix(td.AtExpires, 0)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
@@ -109,7 +109,7 @@ func (a *AuthService) CreateAuth(userid uint, td *auth.TokenDetails) error {
 	}
 	return nil
 }
-func (a *AuthService) ExtractTokenMetadata(r *http.Request) (*auth.AccessDetails, error) {
+func (a *AuthService) ExtractTokenMetadata(r *http.Request) (*jwtutils.AccessDetails, error) {
 	token, err := a.ValidateToken(r)
 	if err != nil {
 		return nil, err
@@ -124,7 +124,7 @@ func (a *AuthService) ExtractTokenMetadata(r *http.Request) (*auth.AccessDetails
 		if err != nil {
 			return nil, err
 		}
-		return &auth.AccessDetails{
+		return &jwtutils.AccessDetails{
 			AccessUuid: accessUuid,
 			UserId:     userId,
 		}, nil
@@ -138,7 +138,7 @@ func (a *AuthService) DeleteAuth(givenUuid string) (int64, error) {
 	}
 	return deleted, nil
 }
-func (a *AuthService) DeleteTokens(authD *auth.AccessDetails) error {
+func (a *AuthService) DeleteTokens(authD *jwtutils.AccessDetails) error {
 	refreshUuid := fmt.Sprintf("%s++%d", authD.AccessUuid, authD.UserId)
 	deletedAt, err := client.Del(authD.AccessUuid).Result()
 	if err != nil {
@@ -155,7 +155,7 @@ func (a *AuthService) DeleteTokens(authD *auth.AccessDetails) error {
 	}
 	return nil
 }
-func FetchAuth(authD *auth.AccessDetails) (uint64, error) {
+func FetchAuth(authD *jwtutils.AccessDetails) (uint64, error) {
 	userid, err := client.Get(authD.AccessUuid).Result()
 	if err != nil {
 		return 0, err
