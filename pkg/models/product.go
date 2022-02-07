@@ -5,6 +5,7 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+// swagger:model Product
 type Product struct {
 	gorm.Model
 	Name        string  `json:"name" validate:"required,min=2,max=45"`

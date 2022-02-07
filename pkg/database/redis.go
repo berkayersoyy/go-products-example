@@ -20,9 +20,9 @@ func InitRedis() *redis.Client {
 		panic(err)
 	}
 	client := redis.NewClient(&redis.Options{
-		Addr: dsn,
+		Addr: conf.RedisHost,
 	})
-	_, err := client.Ping().Result()
+	_, err = client.Ping().Result()
 	if err != nil {
 		panic(err)
 	}

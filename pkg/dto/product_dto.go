@@ -1,5 +1,6 @@
 package dto
 
+// swagger:model ProductDTO
 type ProductDTO struct {
 	ID          uint    `json:"id,string,omitempty"`
 	Name        string  `json:"name" validate:"required,min=2,max=45"`

@@ -3,11 +3,11 @@ package handlers
 import (
 	"fmt"
 	"net/http"
-	"os"
 	"strconv"
 
 	"github.com/berkayersoyy/go-products-example/pkg/models"
 	"github.com/berkayersoyy/go-products-example/pkg/services"
+	"github.com/berkayersoyy/go-products-example/pkg/utils/config"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 )
@@ -17,6 +17,22 @@ type AuthAPI struct {
 	UserService services.UserService
 }
 
+// @BasePath /api/v1
+
+// Login
+// @Summary Login
+// @Schemes
+// @Description Login
+// @Tags Auth
+// @Accept json
+// @Produce json
+// @Param user body models.User true "User ID"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Failure 400 {string} string
+// @Failure 404 {string} string
+// @Security bearerAuth
+// @Router /v1/login/ [post]
 func (a *AuthAPI) Login(c *gin.Context) {
 	var u models.User
 	if err := c.ShouldBindJSON(&u); err != nil {
@@ -52,13 +68,16 @@ func (a *AuthAPI) Refresh(c *gin.Context) {
 	refreshToken := mapToken["refresh_token"]
 
 	//verify the token
-	os.Setenv("REFRESH_SECRET", "mcmvmkmsdnfsdmfdsjf") //this should be in an env file
+	conf, err := config.LoadConfig("./")
+	if err != nil {
+		panic(err)
+	}
 	token, err := jwt.Parse(refreshToken, func(token *jwt.Token) (interface{}, error) {
 		//Make sure that the token method conform to "SigningMethodHMAC"
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
 		}
-		return []byte(os.Getenv("REFRESH_SECRET")), nil
+		return []byte(conf.RefreshSecret), nil
 	})
 	//if there is an error, the token must have expired
 	if err != nil {

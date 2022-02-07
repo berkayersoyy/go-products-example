@@ -21,19 +21,69 @@ func ProvideProductAPI(p services.ProductService) ProductAPI {
 	return ProductAPI{ProductService: p}
 }
 
+// @BasePath /api/v1
+
+// GetAllProducts
+// @Summary Fetch all product
+// @Schemes
+// @Description Fetch all products
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Success 200 {object} models.Product
+// @Failure 500 {string} string
+// @Failure 400 {string} string
+// @Failure 404 {string} string
+// @Security bearerAuth
+// @Router /v1/products/ [get]
 func (p *ProductAPI) GetAllProducts(c *gin.Context) {
 	products := p.ProductService.GetAllProducts()
 
 	c.JSON(http.StatusOK, gin.H{"products": products})
 }
 
+// @BasePath /api/v1
+
+// GetProductByID
+// @Summary Fetch product by id
+// @Schemes
+// @Description Fetch product by id
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {object} models.Product
+// @Failure 500 {string} string
+// @Failure 400 {string} string
+// @Failure 404 {string} string
+// @Security bearerAuth
+// @Router /v1/products/{id} [get]
 func (p *ProductAPI) GetProductByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	product := p.ProductService.GetProductByID(uint(id))
-
+	if product == (models.Product{}) {
+		c.JSON(http.StatusNotFound, "Product not found")
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"product": mappers.ToProductDTO(product)})
 }
 
+// @BasePath /api/v1
+
+// AddProduct
+// @Summary Add Product
+// @Schemes
+// @Description Add Product
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param product body models.Product true "Product ID"
+// @Success 200 {object} models.Product
+// @Failure 500 {string} string
+// @Failure 400 {string} string
+// @Failure 404 {string} string
+// @Security bearerAuth
+// @Router /v1/products/ [post]
 func (p *ProductAPI) AddProduct(c *gin.Context) {
 	var product models.Product
 	err := c.BindJSON(&product)
@@ -54,6 +104,22 @@ func (p *ProductAPI) AddProduct(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"product": mappers.ToProductDTO(createdProduct)})
 }
 
+// @BasePath /api/v1
+
+// UpdateProduct
+// @Summary Update Product
+// @Schemes
+// @Description Update Product
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param product body dto.ProductDTO true "Product ID"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Failure 400 {string} string
+// @Failure 404 {string} string
+// @Security bearerAuth
+// @Router /v1/products/ [put]
 func (p *ProductAPI) UpdateProduct(c *gin.Context) {
 	var productDTO dto.ProductDTO
 	err := c.BindJSON(&productDTO)
@@ -85,6 +151,22 @@ func (p *ProductAPI) UpdateProduct(c *gin.Context) {
 	c.Status(http.StatusOK)
 }
 
+// @BasePath /api/v1
+
+// DeleteProduct
+// @Summary Delete Product
+// @Schemes
+// @Description Delete Product
+// @Tags Products
+// @Accept json
+// @Produce json
+// @Param id path string true "Product ID"
+// @Success 200 {string} string
+// @Failure 500 {string} string
+// @Failure 400 {string} string
+// @Failure 404 {string} string
+// @Security bearerAuth
+// @Router /v1/products/{id} [delete]
 func (p *ProductAPI) DeleteProduct(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	product := p.ProductService.GetProductByID(uint(id))
