@@ -31,6 +31,8 @@ func InitDb() *gorm.DB {
 	if err != nil {
 		panic(err)
 	}
+	db.DB().SetMaxOpenConns(10)
+	db.DB().SetMaxIdleConns(5)
 
 	db.AutoMigrate(&models.Product{})
 	db.AutoMigrate(&models.User{})
