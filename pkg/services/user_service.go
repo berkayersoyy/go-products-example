@@ -5,25 +5,32 @@ import (
 	"github.com/berkayersoyy/go-products-example/pkg/repositories"
 )
 
-type UserService struct {
+type userService struct {
 	UserRepository repositories.UserRepository
+}
+type UserService interface {
+	GetAllUsers() []models.User
+	GetUserByID(id uint) models.User
+	AddUser(user models.User) models.User
+	GetUserByUsername(username string) models.User
+	DeleteUser(models.User)
 }
 
 func ProvideUserService(u repositories.UserRepository) UserService {
-	return UserService{UserRepository: u}
+	return &userService{UserRepository: u}
 }
-func (u *UserService) GetAllUsers() []models.User {
+func (u *userService) GetAllUsers() []models.User {
 	return u.UserRepository.GetAllUsers()
 }
-func (u *UserService) GetUserByID(id uint) models.User {
+func (u *userService) GetUserByID(id uint) models.User {
 	return u.UserRepository.GetUserByID(id)
 }
-func (u *UserService) AddUser(user models.User) models.User {
+func (u *userService) AddUser(user models.User) models.User {
 	return u.UserRepository.AddUser(user)
 }
-func (u *UserService) GetUserByUsername(username string) models.User {
+func (u *userService) GetUserByUsername(username string) models.User {
 	return u.UserRepository.GetUserByUsername(username)
 }
-func (u *UserService) DeleteUser(user models.User) {
+func (u *userService) DeleteUser(user models.User) {
 	u.UserRepository.DeleteUser(user)
 }

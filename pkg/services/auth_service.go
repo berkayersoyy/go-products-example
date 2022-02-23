@@ -94,7 +94,7 @@ func (a *AuthService) CreateToken(userid uint) (*jwtutils.TokenDetails, error) {
 }
 
 func (a *AuthService) CreateAuth(userid uint, td *jwtutils.TokenDetails) error {
-	client = database.GetRedisClient()
+	client = database.GetRedisClient().SingletonRedis
 	at := time.Unix(td.AtExpires, 0)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()

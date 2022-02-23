@@ -7,19 +7,17 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
-// const DB_USERNAME = "root"
-// const DB_PASSWORD = "x03121998X"
-// const DB_NAME = "localhost"
-// const DB_HOST = "127.0.0.1"
-// const DB_PORT = "3306"
+type mysqlClient struct {
+	SingletonMysql *gorm.DB
+}
 
-var singletonMysql *gorm.DB
+var mysqlclient mysqlClient
 
-func GetMysqlClient() *gorm.DB {
-	if singletonMysql == nil {
-		singletonMysql = InitDb()
+func GetMysqlClient() mysqlClient {
+	if mysqlclient.SingletonMysql == nil {
+		mysqlclient.SingletonMysql = InitDb()
 	}
-	return singletonMysql
+	return mysqlclient
 }
 
 func InitDb() *gorm.DB {

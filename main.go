@@ -15,13 +15,13 @@ import (
 
 func setup(db *gorm.DB) *gin.Engine {
 
-	productRepository := repositories.ProductRepository{DB: db}
-	productService := services.ProductService{ProductRepository: productRepository}
-	productApi := handlers.ProductAPI{ProductService: productService}
+	productRepository := repositories.ProvideProductRepository(db)
+	productService := services.ProvideProductService(productRepository)
+	productApi := handlers.ProvideProductAPI(productService)
 
-	userRepository := repositories.UserRepository{DB: db}
-	userService := services.UserService{UserRepository: userRepository}
-	userApi := handlers.UserAPI{UserService: userService}
+	userRepository := repositories.ProvideUserRepository(db)
+	userService := services.ProvideUserService(userRepository)
+	userApi := handlers.ProvideUserAPI(userService)
 
 	authService := services.AuthService{}
 	authApi := handlers.AuthAPI{AuthService: authService, UserService: userService}
@@ -82,8 +82,8 @@ func setup(db *gorm.DB) *gin.Engine {
 // @schemes http
 func main() {
 	db := database.GetMysqlClient()
-	defer db.Close()
-	r := setup(db)
+	defer db.SingletonMysql.Close()
+	r := setup(db.SingletonMysql)
 	err := r.Run()
 	if err != nil {
 		panic(err)
