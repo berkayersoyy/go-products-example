@@ -13,15 +13,15 @@ type mysqlClient struct {
 
 var mysqlclient mysqlClient
 
-func GetMysqlClient() mysqlClient {
+func GetMysqlClient(path string) mysqlClient {
 	if mysqlclient.SingletonMysql == nil {
-		mysqlclient.SingletonMysql = InitDb()
+		mysqlclient.SingletonMysql = InitDb(path)
 	}
 	return mysqlclient
 }
 
-func InitDb() *gorm.DB {
-	conf, err := config.LoadConfig("./")
+func InitDb(path string) *gorm.DB {
+	conf, err := config.LoadConfig(path)
 	if err != nil {
 		panic(err)
 	}

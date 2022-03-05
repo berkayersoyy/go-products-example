@@ -14,7 +14,7 @@ import (
 func (s *Suite) TestRepositoryGetUserById() {
 	user := models.User{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Username: "test-username", Password: "test-password"}
 
-	s.mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users`  WHERE `users`.`deleted_at` IS NULL AND ((`users`.`id` = 1)) ORDER BY `users`.`id` ASC LIMIT 1")).
+	s.mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users` WHERE `users`.`deleted_at` IS NULL AND ((`users`.`id` = 1)) ORDER BY `users`.`id` ASC LIMIT 1")).
 		WithArgs(user.ID).
 		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "username", "password"}).
 			AddRow(user.ID, user.CreatedAt, user.UpdatedAt, user.DeletedAt, user.Username, user.Password))

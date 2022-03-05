@@ -26,16 +26,12 @@ func setup(db *gorm.DB) *gin.Engine {
 	authService := services.AuthService{}
 	authApi := handlers.AuthAPI{AuthService: authService, UserService: userService}
 
-	//TODO Dependency injection with wire.go but
-	// productApi := InitProductAPI(db)
-
 	router := gin.Default()
 
 	//TODO Middleware for validation
 	//router.Use(validators.ProductValidator())
 
 	//TODO Error handler can be add as a middleware
-	//TODO Swagger
 
 	//products
 	products := router.Group("/v1")
@@ -81,7 +77,7 @@ func setup(db *gorm.DB) *gin.Engine {
 // @BasePath /
 // @schemes http
 func main() {
-	db := database.GetMysqlClient()
+	db := database.GetMysqlClient("./")
 	defer db.SingletonMysql.Close()
 	r := setup(db.SingletonMysql)
 	err := r.Run()

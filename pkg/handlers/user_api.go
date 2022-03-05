@@ -171,6 +171,10 @@ func (u *UserAPI) GetUserByUsername(c *gin.Context) {
 
 	un := c.Param("username")
 	user := u.UserService.GetUserByUsername(un)
+	if (user == models.User{}) {
+		c.Status(http.StatusNotFound)
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"user": mappers.ToUserDTO(user)})
 
 }
