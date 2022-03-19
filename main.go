@@ -23,8 +23,8 @@ func setup(db *gorm.DB) *gin.Engine {
 	userService := services.ProvideUserService(userRepository)
 	userApi := handlers.ProvideUserAPI(userService)
 
-	authService := services.AuthService{}
-	authApi := handlers.AuthAPI{AuthService: authService, UserService: userService}
+	authService := services.ProvideAuthService(database.InitRedis())
+	authApi := handlers.ProvideAuthAPI(authService, userService)
 
 	router := gin.Default()
 

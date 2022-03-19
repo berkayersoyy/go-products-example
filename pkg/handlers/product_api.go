@@ -13,12 +13,19 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type ProductAPI struct {
+type productAPI struct {
 	ProductService services.ProductService
+}
+type ProductAPI interface {
+	GetAllProducts(c *gin.Context)
+	GetProductByID(c *gin.Context)
+	AddProduct(c *gin.Context)
+	UpdateProduct(c *gin.Context)
+	DeleteProduct(c *gin.Context)
 }
 
 func ProvideProductAPI(p services.ProductService) ProductAPI {
-	return ProductAPI{ProductService: p}
+	return &productAPI{ProductService: p}
 }
 
 // @BasePath /api/v1
@@ -36,7 +43,7 @@ func ProvideProductAPI(p services.ProductService) ProductAPI {
 // @Failure 404 {string} string
 // @Security bearerAuth
 // @Router /v1/products/ [get]
-func (p *ProductAPI) GetAllProducts(c *gin.Context) {
+func (p *productAPI) GetAllProducts(c *gin.Context) {
 	products := p.ProductService.GetAllProducts()
 
 	c.JSON(http.StatusOK, gin.H{"products": products})
@@ -58,7 +65,7 @@ func (p *ProductAPI) GetAllProducts(c *gin.Context) {
 // @Failure 404 {string} string
 // @Security bearerAuth
 // @Router /v1/products/{id} [get]
-func (p *ProductAPI) GetProductByID(c *gin.Context) {
+func (p *productAPI) GetProductByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	product := p.ProductService.GetProductByID(uint(id))
 	if product == (models.Product{}) {
@@ -84,7 +91,7 @@ func (p *ProductAPI) GetProductByID(c *gin.Context) {
 // @Failure 404 {string} string
 // @Security bearerAuth
 // @Router /v1/products/ [post]
-func (p *ProductAPI) AddProduct(c *gin.Context) {
+func (p *productAPI) AddProduct(c *gin.Context) {
 	var product models.Product
 	err := c.BindJSON(&product)
 	if err != nil {
@@ -120,7 +127,7 @@ func (p *ProductAPI) AddProduct(c *gin.Context) {
 // @Failure 404 {string} string
 // @Security bearerAuth
 // @Router /v1/products/ [put]
-func (p *ProductAPI) UpdateProduct(c *gin.Context) {
+func (p *productAPI) UpdateProduct(c *gin.Context) {
 	var productDTO dto.ProductDTO
 	err := c.BindJSON(&productDTO)
 	if err != nil {
@@ -167,7 +174,7 @@ func (p *ProductAPI) UpdateProduct(c *gin.Context) {
 // @Failure 404 {string} string
 // @Security bearerAuth
 // @Router /v1/products/{id} [delete]
-func (p *ProductAPI) DeleteProduct(c *gin.Context) {
+func (p *productAPI) DeleteProduct(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	product := p.ProductService.GetProductByID(uint(id))
 	if product == (models.Product{}) {

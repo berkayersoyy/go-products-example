@@ -13,12 +13,19 @@ import (
 	"github.com/go-playground/validator/v10"
 )
 
-type UserAPI struct {
+type userAPI struct {
 	UserService services.UserService
+}
+type UserAPI interface {
+	GetAllUsers(c *gin.Context)
+	GetUserByID(c *gin.Context)
+	AddUser(c *gin.Context)
+	UpdateUser(c *gin.Context)
+	DeleteUser(c *gin.Context)
 }
 
 func ProvideUserAPI(u services.UserService) UserAPI {
-	return UserAPI{UserService: u}
+	return &userAPI{UserService: u}
 }
 
 // @BasePath /api/v1
@@ -35,7 +42,7 @@ func ProvideUserAPI(u services.UserService) UserAPI {
 // @Failure 400 {string} string
 // @Failure 404 {string} string
 // @Router /v1/users/ [get]
-func (u *UserAPI) GetAllUsers(c *gin.Context) {
+func (u *userAPI) GetAllUsers(c *gin.Context) {
 	users := u.UserService.GetAllUsers()
 	c.JSON(http.StatusOK, gin.H{"users": users})
 }
@@ -55,7 +62,7 @@ func (u *UserAPI) GetAllUsers(c *gin.Context) {
 // @Failure 400 {string} string
 // @Failure 404 {string} string
 // @Router /v1/users/{id} [get]
-func (u *UserAPI) GetUserByID(c *gin.Context) {
+func (u *userAPI) GetUserByID(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	user := u.UserService.GetUserByID(uint(id))
 	if user == (models.User{}) {
@@ -80,7 +87,7 @@ func (u *UserAPI) GetUserByID(c *gin.Context) {
 // @Failure 400 {string} string
 // @Failure 404 {string} string
 // @Router /v1/users/ [post]
-func (u *UserAPI) AddUser(c *gin.Context) {
+func (u *userAPI) AddUser(c *gin.Context) {
 	var user models.User
 	err := c.BindJSON(&user)
 	if err != nil {
@@ -114,7 +121,7 @@ func (u *UserAPI) AddUser(c *gin.Context) {
 // @Failure 400 {string} string
 // @Failure 404 {string} string
 // @Router /v1/users/ [put]
-func (u *UserAPI) UpdateUser(c *gin.Context) {
+func (u *userAPI) UpdateUser(c *gin.Context) {
 	var userDTO dto.UserDTO
 	err := c.BindJSON(&userDTO)
 	if err != nil {
@@ -157,7 +164,7 @@ func (u *UserAPI) UpdateUser(c *gin.Context) {
 // @Failure 400 {string} string
 // @Failure 404 {string} string
 // @Router /v1/users/{id} [delete]
-func (u *UserAPI) DeleteUser(c *gin.Context) {
+func (u *userAPI) DeleteUser(c *gin.Context) {
 	id, _ := strconv.Atoi(c.Param("id"))
 	user := u.UserService.GetUserByID(uint(id))
 	if user == (models.User{}) {
@@ -167,7 +174,7 @@ func (u *UserAPI) DeleteUser(c *gin.Context) {
 	u.UserService.DeleteUser(user)
 	c.Status(http.StatusOK)
 }
-func (u *UserAPI) GetUserByUsername(c *gin.Context) {
+func (u *userAPI) GetUserByUsername(c *gin.Context) {
 
 	un := c.Param("username")
 	user := u.UserService.GetUserByUsername(un)

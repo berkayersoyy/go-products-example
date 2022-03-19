@@ -12,9 +12,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type AuthAPI struct {
+type authAPI struct {
 	AuthService services.AuthService
 	UserService services.UserService
+}
+type AuthAPI interface {
+	Login(c *gin.Context)
+	Refresh(c *gin.Context)
+	Logout(c *gin.Context)
+}
+
+func ProvideAuthAPI(a services.AuthService, u services.UserService) AuthAPI {
+	return &authAPI{AuthService: a, UserService: u}
 }
 
 // @BasePath /api/v1
@@ -33,7 +42,7 @@ type AuthAPI struct {
 // @Failure 404 {string} string
 // @Security bearerAuth
 // @Router /v1/login/ [post]
-func (a *AuthAPI) Login(c *gin.Context) {
+func (a *authAPI) Login(c *gin.Context) {
 	var u models.User
 	if err := c.ShouldBindJSON(&u); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, "Invalid json provided")
@@ -59,7 +68,7 @@ func (a *AuthAPI) Login(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, tokens)
 }
-func (a *AuthAPI) Refresh(c *gin.Context) {
+func (a *authAPI) Refresh(c *gin.Context) {
 	mapToken := map[string]string{}
 	if err := c.ShouldBindJSON(&mapToken); err != nil {
 		c.JSON(http.StatusUnprocessableEntity, err.Error())
@@ -130,7 +139,7 @@ func (a *AuthAPI) Refresh(c *gin.Context) {
 		c.JSON(http.StatusUnauthorized, "refresh expired")
 	}
 }
-func (a *AuthAPI) Logout(c *gin.Context) {
+func (a *authAPI) Logout(c *gin.Context) {
 	metadata, err := a.AuthService.ExtractTokenMetadata(c.Request)
 	if err != nil {
 		c.JSON(http.StatusUnauthorized, "unauthorized")
