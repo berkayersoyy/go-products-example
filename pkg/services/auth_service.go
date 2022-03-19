@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/berkayersoyy/go-products-example/pkg/database"
 	"github.com/berkayersoyy/go-products-example/pkg/utils/config"
 	jwtutils "github.com/berkayersoyy/go-products-example/pkg/utils/jwt"
 	"github.com/dgrijalva/jwt-go"
@@ -16,10 +15,24 @@ import (
 	"github.com/twinj/uuid"
 )
 
-type AuthService struct{}
+type authService struct {
+	Client *redis.Client
+}
 
-//TODO could be singleton here
-var client *redis.Client
+type AuthService interface {
+	ValidateToken(r *http.Request) (*jwt.Token, error)
+	TokenValid(r *http.Request) error
+	CreateToken(userid uint) (*jwtutils.TokenDetails, error)
+	CreateAuth(userid uint, td *jwtutils.TokenDetails) error
+	DeleteTokens(authD *jwtutils.AccessDetails) error
+	ExtractTokenMetadata(r *http.Request) (*jwtutils.AccessDetails, error)
+	FetchAuth(authD *jwtutils.AccessDetails) (uint64, error)
+	DeleteAuth(givenUuid string) (int64, error)
+}
+
+func ProvideAuthService(c *redis.Client) AuthService {
+	return &authService{Client: c}
+}
 
 func ExtractToken(r *http.Request) string {
 	bearToken := r.Header.Get("Authorization")
@@ -30,7 +43,7 @@ func ExtractToken(r *http.Request) string {
 	return ""
 }
 
-func (a *AuthService) ValidateToken(r *http.Request) (*jwt.Token, error) {
+func (a *authService) ValidateToken(r *http.Request) (*jwt.Token, error) {
 	conf, err := config.LoadConfig("./")
 	if err != nil {
 		panic(err)
@@ -47,7 +60,7 @@ func (a *AuthService) ValidateToken(r *http.Request) (*jwt.Token, error) {
 	}
 	return token, nil
 }
-func (a *AuthService) TokenValid(r *http.Request) error {
+func (a *authService) TokenValid(r *http.Request) error {
 	token, err := a.ValidateToken(r)
 	if err != nil {
 		return err
@@ -57,7 +70,7 @@ func (a *AuthService) TokenValid(r *http.Request) error {
 	}
 	return nil
 }
-func (a *AuthService) CreateToken(userid uint) (*jwtutils.TokenDetails, error) {
+func (a *authService) CreateToken(userid uint) (*jwtutils.TokenDetails, error) {
 	conf, err := config.LoadConfig("./")
 	if err != nil {
 		panic(err)
@@ -93,23 +106,22 @@ func (a *AuthService) CreateToken(userid uint) (*jwtutils.TokenDetails, error) {
 	return td, nil
 }
 
-func (a *AuthService) CreateAuth(userid uint, td *jwtutils.TokenDetails) error {
-	client = database.GetRedisClient().SingletonRedis
+func (a *authService) CreateAuth(userid uint, td *jwtutils.TokenDetails) error {
 	at := time.Unix(td.AtExpires, 0)
 	rt := time.Unix(td.RtExpires, 0)
 	now := time.Now()
 
-	errAccess := client.Set(td.AccessUuid, strconv.Itoa(int(userid)), at.Sub(now)).Err()
+	errAccess := a.Client.Set(td.AccessUuid, strconv.Itoa(int(userid)), at.Sub(now)).Err()
 	if errAccess != nil {
 		return errAccess
 	}
-	errRefresh := client.Set(td.RefreshUuid, strconv.Itoa(int(userid)), rt.Sub(now)).Err()
+	errRefresh := a.Client.Set(td.RefreshUuid, strconv.Itoa(int(userid)), rt.Sub(now)).Err()
 	if errRefresh != nil {
 		return errRefresh
 	}
 	return nil
 }
-func (a *AuthService) ExtractTokenMetadata(r *http.Request) (*jwtutils.AccessDetails, error) {
+func (a *authService) ExtractTokenMetadata(r *http.Request) (*jwtutils.AccessDetails, error) {
 	token, err := a.ValidateToken(r)
 	if err != nil {
 		return nil, err
@@ -131,21 +143,21 @@ func (a *AuthService) ExtractTokenMetadata(r *http.Request) (*jwtutils.AccessDet
 	}
 	return nil, err
 }
-func (a *AuthService) DeleteAuth(givenUuid string) (int64, error) {
-	deleted, err := client.Del(givenUuid).Result()
+func (a *authService) DeleteAuth(givenUuid string) (int64, error) {
+	deleted, err := a.Client.Del(givenUuid).Result()
 	if err != nil {
 		return 0, err
 	}
 	return deleted, nil
 }
-func (a *AuthService) DeleteTokens(authD *jwtutils.AccessDetails) error {
+func (a *authService) DeleteTokens(authD *jwtutils.AccessDetails) error {
 	refreshUuid := fmt.Sprintf("%s++%d", authD.AccessUuid, authD.UserId)
-	deletedAt, err := client.Del(authD.AccessUuid).Result()
+	deletedAt, err := a.Client.Del(authD.AccessUuid).Result()
 	if err != nil {
 		return err
 	}
 	//delete refresh token
-	deletedRt, err := client.Del(refreshUuid).Result()
+	deletedRt, err := a.Client.Del(refreshUuid).Result()
 	if err != nil {
 		return err
 	}
@@ -155,8 +167,8 @@ func (a *AuthService) DeleteTokens(authD *jwtutils.AccessDetails) error {
 	}
 	return nil
 }
-func FetchAuth(authD *jwtutils.AccessDetails) (uint64, error) {
-	userid, err := client.Get(authD.AccessUuid).Result()
+func (a *authService) FetchAuth(authD *jwtutils.AccessDetails) (uint64, error) {
+	userid, err := a.Client.Get(authD.AccessUuid).Result()
 	if err != nil {
 		return 0, err
 	}
@@ -165,11 +177,4 @@ func FetchAuth(authD *jwtutils.AccessDetails) (uint64, error) {
 		return 0, errors.New("unauthorized")
 	}
 	return userID, nil
-}
-func DeleteAuth(givenUuid string) (int64, error) {
-	deleted, err := client.Del(givenUuid).Result()
-	if err != nil {
-		return 0, err
-	}
-	return deleted, nil
 }
