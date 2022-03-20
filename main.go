@@ -23,7 +23,8 @@ func setup(db *gorm.DB) *gin.Engine {
 	userService := services.ProvideUserService(userRepository)
 	userApi := handlers.ProvideUserAPI(userService)
 
-	authService := services.ProvideAuthService(database.InitRedis())
+	r := database.ProvideRedisClient()
+	authService := services.ProvideAuthService(r.GetClient())
 	authApi := handlers.ProvideAuthAPI(authService, userService)
 
 	router := gin.Default()
@@ -77,9 +78,10 @@ func setup(db *gorm.DB) *gin.Engine {
 // @BasePath /
 // @schemes http
 func main() {
-	db := database.GetMysqlClient("./")
-	defer db.SingletonMysql.Close()
-	r := setup(db.SingletonMysql)
+	dbClient := database.ProvideMysqlClient("./")
+	db := dbClient.GetClient()
+	defer db.Close()
+	r := setup(db)
 	err := r.Run()
 	if err != nil {
 		panic(err)

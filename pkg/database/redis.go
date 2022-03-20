@@ -5,17 +5,19 @@ import (
 	"github.com/go-redis/redis/v7"
 )
 
+type RedisClient interface {
+	GetClient() *redis.Client
+}
+
 type redisClient struct {
 	SingletonRedis *redis.Client
 }
 
-var redisclient redisClient
-
-func GetRedisClient() redisClient {
-	if redisclient.SingletonRedis == nil {
-		redisclient.SingletonRedis = InitRedis()
-	}
-	return redisclient
+func ProvideRedisClient() RedisClient {
+	return &redisClient{SingletonRedis: InitRedis()}
+}
+func (r *redisClient) GetClient() *redis.Client {
+	return r.SingletonRedis
 }
 
 func InitRedis() *redis.Client {

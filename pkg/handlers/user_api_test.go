@@ -18,26 +18,31 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-type UserSuite struct {
+type SuiteTest struct {
 	suite.Suite
 	db *gorm.DB
+
+	userService services.UserService
 }
 
-func (suite *UserSuite) SetupSuite() {
-	suite.db = database.GetMysqlClient("../../").SingletonMysql
+func (suite *SuiteTest) SetupSuite() {
+	//TODO MOCK DB
+	db := database.ProvideMysqlClient("../../")
+	suite.db = db.GetClient()
+	suite.userService = services.ProvideUserService(repositories.ProvideUserRepository(suite.db))
 }
-func (suite *UserSuite) TearDownTest() {
+func (suite *SuiteTest) TearDownTest() {
 
 }
 
-func (suite *UserSuite) TearDownSuite() {
+func (suite *SuiteTest) TearDownSuite() {
 	defer suite.db.Close()
 }
 
 func TestSuite(t *testing.T) {
-	suite.Run(t, new(UserSuite))
+	suite.Run(t, new(SuiteTest))
 }
-func (suite *UserSuite) TestGetAllUsers() {
+func (suite *SuiteTest) TestGetAllUsers() {
 	req, w := setGetAllUsersRouter(suite.db)
 	a := suite.Assert()
 
@@ -73,7 +78,7 @@ func setGetAllUsersRouter(db *gorm.DB) (*http.Request, *httptest.ResponseRecorde
 	return req, w
 
 }
-func (suite *UserSuite) TestGetUserByID() {
+func (suite *SuiteTest) TestGetUserByID() {
 	req, w := setGetUserByIDRouter(suite.db, "/v1/users/1")
 
 	a := suite.Assert()
@@ -112,7 +117,7 @@ func setGetUserByIDRouter(db *gorm.DB, url string) (*http.Request, *httptest.Res
 
 }
 
-func (suite *UserSuite) TestAddUser() {
+func (suite *SuiteTest) TestAddUser() {
 	a := suite.Assert()
 	user := models.User{
 		Username: "test-username",
@@ -158,7 +163,7 @@ func setAddUserRouter(db *gorm.DB, body *bytes.Buffer) (*http.Request, *httptest
 	return req, w, nil
 
 }
-func (suite *UserSuite) TestUpdateUser() {
+func (suite *SuiteTest) TestUpdateUser() {
 	a := suite.Assert()
 	user := dto.UserDTO{
 		ID:       1,
@@ -206,7 +211,7 @@ func setUpdateUserRouter(db *gorm.DB, body *bytes.Buffer, url string) (*http.Req
 
 }
 
-func (suite *UserSuite) TestDeleteUser() {
+func (suite *SuiteTest) TestDeleteUser() {
 	a := suite.Assert()
 
 	req, w, err := setDeleteUserRouter(suite.db, "/v1/users/1")

@@ -10,14 +10,16 @@ import (
 type mysqlClient struct {
 	SingletonMysql *gorm.DB
 }
+type MysqlClient interface {
+	GetClient() *gorm.DB
+}
 
-var mysqlclient mysqlClient
+func ProvideMysqlClient(path string) MysqlClient {
+	return &mysqlClient{SingletonMysql: InitDb(path)}
+}
 
-func GetMysqlClient(path string) mysqlClient {
-	if mysqlclient.SingletonMysql == nil {
-		mysqlclient.SingletonMysql = InitDb(path)
-	}
-	return mysqlclient
+func (m *mysqlClient) GetClient() *gorm.DB {
+	return m.SingletonMysql
 }
 
 func InitDb(path string) *gorm.DB {
