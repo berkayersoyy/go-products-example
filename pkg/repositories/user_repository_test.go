@@ -1,66 +1,115 @@
 package repositories
 
 import (
-	"fmt"
-	"regexp"
-	"time"
-
-	"github.com/DATA-DOG/go-sqlmock"
+	mocks "github.com/berkayersoyy/go-products-example/pkg/mocks/repositories"
 	"github.com/berkayersoyy/go-products-example/pkg/models"
 	"github.com/jinzhu/gorm"
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-func (s *Suite) TestRepositoryGetUserById() {
-	user := models.User{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Username: "test-username", Password: "test-password"}
+func TestUserRepository_GetAllUsersShouldReturnNotEmptyUserArray(t *testing.T) {
+	users := []models.User{{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("GetAllUsers").Return(users)
 
-	s.mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users` WHERE `users`.`deleted_at` IS NULL AND ((`users`.`id` = 1)) ORDER BY `users`.`id` ASC LIMIT 1")).
-		WithArgs(user.ID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "username", "password"}).
-			AddRow(user.ID, user.CreatedAt, user.UpdatedAt, user.DeletedAt, user.Username, user.Password))
-	res := s.userRepository.GetUserByID(user.ID)
+	resp := mockRepo.GetAllUsers()
 
-	require.Equal(s.T(), user, res)
-	if err := s.mock.ExpectationsWereMet(); err != nil {
-		fmt.Printf("there were unfulfilled expectations: %s", err)
-	}
+	assert.Equal(t, users, resp)
+	assert.NotEmpty(t, users)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetAllUsers", 1)
 }
+func TestUserRepository_GetAllUsersShouldReturnEmptyUserArray(t *testing.T) {
+	users := []models.User{}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("GetAllUsers").Return(users)
 
-func (s *Suite) TestRepositoryGetAllUsers() {
-	user := models.User{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Username: "test-username", Password: "test-password"}
+	resp := mockRepo.GetAllUsers()
 
-	s.mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `users`  WHERE `users`.`deleted_at` IS NULL ORDER BY `users`.`id` ASC LIMIT 1")).
-		WithArgs(user.ID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "username", "password"}).
-			AddRow(user.ID, user.CreatedAt, user.UpdatedAt, user.DeletedAt, user.Username, user.Password))
-	res := s.userRepository.GetAllUsers()
-
-	require.Equal(s.T(), user, res[0])
-	if err := s.mock.ExpectationsWereMet(); err != nil {
-		fmt.Printf("there were unfulfilled expectations: %s", err)
-	}
+	assert.Equal(t, users, resp)
+	assert.Empty(t, users)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetAllUsers", 1)
 }
-func (s *Suite) TestRepositoryAddUser() {
-	user := models.User{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Username: "test-username", Password: "test-password"}
-	prep := s.mock.ExpectPrepare("INSERT INTO users (username, password) VALUES (?, ?)")
-	prep.ExpectExec().
-		WithArgs(user.Username, user.Password).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-	res := s.userRepository.AddUser(user)
+func TestUserRepository_GetUserByIDShouldReturnValidUser(t *testing.T) {
+	user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("GetUserByID", user.ID).Return(user)
 
-	require.Equal(s.T(), user, res)
-	if err := s.mock.ExpectationsWereMet(); err != nil {
-		fmt.Printf("there were unfulfilled expectations: %s", err)
-	}
+	resp := mockRepo.GetUserByID(uint(1))
+
+	assert.Equal(t, user, resp)
+	assert.NotEmpty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetUserByID", 1)
 }
-func (s *Suite) TestRepositoryDeleteUser() {
-	user := models.User{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Username: "test-username", Password: "test-password"}
-	prep := s.mock.ExpectPrepare("DELETE from users WHERE id = ?")
-	prep.ExpectExec().
-		WithArgs(user.ID).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-	s.userRepository.DeleteUser(user)
-	if err := s.mock.ExpectationsWereMet(); err != nil {
-		fmt.Printf("there were unfulfilled expectations: %s", err)
-	}
+func TestUserRepository_GetUserByIDShouldReturnEmptyUser(t *testing.T) {
+	user := models.User{}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("GetUserByID", uint(0)).Return(user)
+
+	resp := mockRepo.GetUserByID(uint(0))
+
+	assert.Equal(t, user, resp)
+	assert.Empty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetUserByID", 1)
+}
+func TestUserRepository_GetUserByUsernameShouldReturnValidUser(t *testing.T) {
+	user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("GetUserByUsername", user.Username).Return(user)
+
+	resp := mockRepo.GetUserByUsername("test-username")
+
+	assert.Equal(t, user, resp)
+	assert.NotEmpty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetUserByUsername", 1)
+}
+func TestUserRepository_GetUserByUsernameShouldReturnEmptyUser(t *testing.T) {
+	user := models.User{}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("GetUserByUsername", "test").Return(user)
+
+	resp := mockRepo.GetUserByUsername("test")
+
+	assert.Equal(t, user, resp)
+	assert.Empty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetUserByUsername", 1)
+}
+func TestUserRepository_AddUserShouldReturnValidUser(t *testing.T) {
+	user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("AddUser", user).Return(user)
+
+	resp := mockRepo.AddUser(user)
+
+	assert.Equal(t, user, resp)
+	assert.NotEmpty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "AddUser", 1)
+}
+func TestUserRepository_AddUserShouldReturnEmptyUser(t *testing.T) {
+	user := models.User{}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("AddUser", user).Return(user)
+
+	resp := mockRepo.AddUser(user)
+
+	assert.Equal(t, user, resp)
+	assert.Empty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "AddUser", 1)
+}
+func TestUserRepository_DeleteUser(t *testing.T) {
+	user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
+	mockRepo := mocks.UserRepository{}
+	mockRepo.On("DeleteUser", user)
+
+	mockRepo.DeleteUser(user)
+
+	mockRepo.AssertNumberOfCalls(t, "AddUser", 1)
 }

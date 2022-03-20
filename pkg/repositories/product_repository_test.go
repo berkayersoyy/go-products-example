@@ -1,100 +1,80 @@
 package repositories
 
 import (
-	"database/sql"
-	"fmt"
-	"regexp"
-	"testing"
-	"time"
-
-	"github.com/DATA-DOG/go-sqlmock"
+	mocks "github.com/berkayersoyy/go-products-example/pkg/mocks/repositories"
 	"github.com/berkayersoyy/go-products-example/pkg/models"
 	"github.com/jinzhu/gorm"
-	"github.com/stretchr/testify/require"
-	"github.com/stretchr/testify/suite"
+	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
-type Suite struct {
-	suite.Suite
-	DB   *gorm.DB
-	mock sqlmock.Sqlmock
+func TestProductRepository_GetAllProductsShouldReturnNotEmptyProductArray(t *testing.T) {
+	products := []models.Product{{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}}
+	mockRepo := mocks.ProductRepository{}
+	mockRepo.On("GetAllProducts").Return(products)
 
-	productRepository ProductRepository
-	userRepository    UserRepository
-	product           *models.Product
-	user              *models.User
+	resp := mockRepo.GetAllProducts()
+
+	assert.Equal(t, products, resp)
+	assert.NotEmpty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetAllProducts", 1)
 }
+func TestProductRepository_GetAllProductsShouldReturnEmptyProductArray(t *testing.T) {
+	products := []models.Product{}
+	mockRepo := mocks.ProductRepository{}
+	mockRepo.On("GetAllProducts").Return(products)
 
-func (s *Suite) SetupSuite() {
-	var (
-		db  *sql.DB
-		err error
-	)
+	resp := mockRepo.GetAllProducts()
 
-	db, s.mock, err = sqlmock.New(sqlmock.QueryMatcherOption(sqlmock.QueryMatcherRegexp))
-	require.NoError(s.T(), err)
-
-	s.DB, err = gorm.Open("sqlmock", db)
-	require.NoError(s.T(), err)
-
-	s.DB.LogMode(true)
-
-	s.mock.MatchExpectationsInOrder(false)
-	s.productRepository = ProvideProductRepository(s.DB)
-	s.userRepository = ProvideUserRepository(s.DB)
+	assert.Equal(t, products, resp)
+	assert.Empty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetAllProducts", 1)
 }
-func (s *Suite) TestRepositoryGetProductById() {
-	product := models.Product{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Name: "test-product", Price: 10, Description: "test-description"}
+func TestProductRepository_GetProductByIDShouldReturnValidProduct(t *testing.T) {
+	product := models.Product{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}
+	mockRepo := mocks.ProductRepository{}
+	mockRepo.On("GetProductByID", product.ID).Return(product)
 
-	s.mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `products`  WHERE `products`.`deleted_at` IS NULL AND ((`products`.`id` = 1)) ORDER BY `products`.`id` ASC LIMIT 1")).
-		WithArgs(product.ID).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "name", "price", "description"}).
-			AddRow(product.ID, product.CreatedAt, product.UpdatedAt, product.DeletedAt, product.Name, product.Price, product.Description))
-	res := s.productRepository.GetProductByID(product.ID)
+	resp := mockRepo.GetProductByID(uint(1))
 
-	require.Equal(s.T(), product, res)
-	if err := s.mock.ExpectationsWereMet(); err != nil {
-		fmt.Printf("there were unfulfilled expectations: %s", err)
-	}
+	assert.Equal(t, product, resp)
+	assert.NotEmpty(t, product, resp)
+	assert.Equal(t, product.ID, resp.ID)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetProductByID", 1)
 }
+func TestProductRepository_GetProductByIDShouldReturnEmptyProduct(t *testing.T) {
+	product := models.Product{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}
+	mockRepo := mocks.ProductRepository{}
+	mockRepo.On("GetProductByID", uint(0)).Return(models.Product{})
 
-func (s *Suite) TestRepositoryGetAllProducts() {
-	product := models.Product{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Name: "test-product", Price: 10, Description: "test-description"}
-	s.mock.ExpectQuery(regexp.QuoteMeta("SELECT * FROM `products`  WHERE `products`.`deleted_at` IS NULL ORDER BY `products`.`id` ASC LIMIT 1")).
-		WillReturnRows(sqlmock.NewRows([]string{"id", "created_at", "updated_at", "deleted_at", "name", "price", "description"}).
-			AddRow(product.ID, product.CreatedAt, product.UpdatedAt, product.DeletedAt, product.Name, product.Price, product.Description))
-	res := s.productRepository.GetAllProducts()
-	require.Equal(s.T(), product, res[0])
-	if err := s.mock.ExpectationsWereMet(); err != nil {
-		fmt.Printf("there were unfulfilled expectations: %s", err)
-	}
+	resp := mockRepo.GetProductByID(uint(0))
+
+	assert.NotEqual(t, product, resp)
+	assert.Empty(t, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "GetProductByID", 1)
 }
-func (s *Suite) TestRepositoryAddProduct() {
-	product := models.Product{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Name: "test-product", Price: 10, Description: "test-description"}
-	prep := s.mock.ExpectPrepare("INSERT INTO products (name, price, description) VALUES (?, ?, ?)")
-	prep.ExpectExec().
-		WithArgs(product.Name, product.Price, product.Description).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-	res := s.productRepository.AddProduct(product)
-	require.Equal(s.T(), product, res)
-	if err := s.mock.ExpectationsWereMet(); err != nil {
-		fmt.Printf("there were unfulfilled expectations: %s", err)
-	}
+func TestProductRepository_AddProductShouldReturnValidProduct(t *testing.T) {
+	product := models.Product{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}
+	mockRepo := mocks.ProductRepository{}
+	mockRepo.On("AddProduct", product).Return(product)
+
+	resp := mockRepo.AddProduct(product)
+
+	assert.NotEmpty(t, resp)
+	assert.Equal(t, product, resp)
+	assert.NotNil(t, resp)
+	mockRepo.AssertNumberOfCalls(t, "AddProduct", 1)
 }
-func (s *Suite) TestRepositoryDeleteProduct() {
-	product := models.Product{Model: gorm.Model{ID: 1, CreatedAt: time.Now(), UpdatedAt: time.Now(), DeletedAt: nil}, Name: "test-product", Price: 10, Description: "test-description"}
-	prep := s.mock.ExpectPrepare("DELETE from products WHERE id = ?")
-	prep.ExpectExec().
-		WithArgs(product.ID).
-		WillReturnResult(sqlmock.NewResult(0, 1))
-	s.productRepository.DeleteProduct(product)
-	if err := s.mock.ExpectationsWereMet(); err != nil {
-		fmt.Printf("there were unfulfilled expectations: %s", err)
-	}
-}
-func (s *Suite) AfterTest(_, _ string) {
-	require.NoError(s.T(), s.mock.ExpectationsWereMet())
-}
-func TestInit(t *testing.T) {
-	suite.Run(t, new(Suite))
+func TestProductRepository_DeleteProduct(t *testing.T) {
+	product := models.Product{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}
+	mockRepo := mocks.ProductRepository{}
+	mockRepo.On("DeleteProduct", product)
+
+	mockRepo.DeleteProduct(product)
+
+	mockRepo.AssertNumberOfCalls(t, "DeleteProduct", 1)
 }
