@@ -5,6 +5,7 @@ import (
 	"github.com/berkayersoyy/go-products-example/pkg/models"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
@@ -35,7 +36,7 @@ func TestProductRepository_GetAllProductsShouldReturnEmptyProductArray(t *testin
 func TestProductRepository_GetProductByIDShouldReturnValidProduct(t *testing.T) {
 	product := models.Product{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}
 	mockRepo := mocks.ProductRepository{}
-	mockRepo.On("GetProductByID", product.ID).Return(product)
+	mockRepo.On("GetProductByID", mock.Anything).Return(product)
 
 	resp := mockRepo.GetProductByID(uint(1))
 
@@ -48,7 +49,7 @@ func TestProductRepository_GetProductByIDShouldReturnValidProduct(t *testing.T) 
 func TestProductRepository_GetProductByIDShouldReturnEmptyProduct(t *testing.T) {
 	product := models.Product{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}
 	mockRepo := mocks.ProductRepository{}
-	mockRepo.On("GetProductByID", uint(0)).Return(models.Product{})
+	mockRepo.On("GetProductByID", mock.Anything).Return(models.Product{})
 
 	resp := mockRepo.GetProductByID(uint(0))
 
@@ -60,7 +61,7 @@ func TestProductRepository_GetProductByIDShouldReturnEmptyProduct(t *testing.T) 
 func TestProductRepository_AddProductShouldReturnValidProduct(t *testing.T) {
 	product := models.Product{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}
 	mockRepo := mocks.ProductRepository{}
-	mockRepo.On("AddProduct", product).Return(product)
+	mockRepo.On("AddProduct", mock.Anything).Return(product)
 
 	resp := mockRepo.AddProduct(product)
 
@@ -72,7 +73,7 @@ func TestProductRepository_AddProductShouldReturnValidProduct(t *testing.T) {
 func TestProductRepository_DeleteProduct(t *testing.T) {
 	product := models.Product{Name: "test-product", Price: 10, Description: "test-desc", Model: gorm.Model{ID: 1}}
 	mockRepo := mocks.ProductRepository{}
-	mockRepo.On("DeleteProduct", product)
+	mockRepo.On("DeleteProduct", mock.Anything)
 
 	mockRepo.DeleteProduct(product)
 

@@ -5,6 +5,7 @@ import (
 	"github.com/berkayersoyy/go-products-example/pkg/models"
 	"github.com/jinzhu/gorm"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"testing"
 )
 
@@ -35,7 +36,7 @@ func TestUserRepository_GetAllUsersShouldReturnEmptyUserArray(t *testing.T) {
 func TestUserRepository_GetUserByIDShouldReturnValidUser(t *testing.T) {
 	user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
 	mockRepo := mocks.UserRepository{}
-	mockRepo.On("GetUserByID", user.ID).Return(user)
+	mockRepo.On("GetUserByID", mock.Anything).Return(user)
 
 	resp := mockRepo.GetUserByID(uint(1))
 
@@ -47,7 +48,7 @@ func TestUserRepository_GetUserByIDShouldReturnValidUser(t *testing.T) {
 func TestUserRepository_GetUserByIDShouldReturnEmptyUser(t *testing.T) {
 	user := models.User{}
 	mockRepo := mocks.UserRepository{}
-	mockRepo.On("GetUserByID", uint(0)).Return(user)
+	mockRepo.On("GetUserByID", mock.Anything).Return(user)
 
 	resp := mockRepo.GetUserByID(uint(0))
 
@@ -59,7 +60,7 @@ func TestUserRepository_GetUserByIDShouldReturnEmptyUser(t *testing.T) {
 func TestUserRepository_GetUserByUsernameShouldReturnValidUser(t *testing.T) {
 	user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
 	mockRepo := mocks.UserRepository{}
-	mockRepo.On("GetUserByUsername", user.Username).Return(user)
+	mockRepo.On("GetUserByUsername", mock.Anything).Return(user)
 
 	resp := mockRepo.GetUserByUsername("test-username")
 
@@ -71,7 +72,7 @@ func TestUserRepository_GetUserByUsernameShouldReturnValidUser(t *testing.T) {
 func TestUserRepository_GetUserByUsernameShouldReturnEmptyUser(t *testing.T) {
 	user := models.User{}
 	mockRepo := mocks.UserRepository{}
-	mockRepo.On("GetUserByUsername", "test").Return(user)
+	mockRepo.On("GetUserByUsername", mock.Anything).Return(user)
 
 	resp := mockRepo.GetUserByUsername("test")
 
@@ -83,7 +84,7 @@ func TestUserRepository_GetUserByUsernameShouldReturnEmptyUser(t *testing.T) {
 func TestUserRepository_AddUserShouldReturnValidUser(t *testing.T) {
 	user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
 	mockRepo := mocks.UserRepository{}
-	mockRepo.On("AddUser", user).Return(user)
+	mockRepo.On("AddUser", mock.Anything).Return(user)
 
 	resp := mockRepo.AddUser(user)
 
@@ -95,7 +96,7 @@ func TestUserRepository_AddUserShouldReturnValidUser(t *testing.T) {
 func TestUserRepository_AddUserShouldReturnEmptyUser(t *testing.T) {
 	user := models.User{}
 	mockRepo := mocks.UserRepository{}
-	mockRepo.On("AddUser", user).Return(user)
+	mockRepo.On("AddUser", mock.Anything).Return(user)
 
 	resp := mockRepo.AddUser(user)
 
@@ -107,9 +108,9 @@ func TestUserRepository_AddUserShouldReturnEmptyUser(t *testing.T) {
 func TestUserRepository_DeleteUser(t *testing.T) {
 	user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
 	mockRepo := mocks.UserRepository{}
-	mockRepo.On("DeleteUser", user)
+	mockRepo.On("DeleteUser", mock.Anything)
 
 	mockRepo.DeleteUser(user)
 
-	mockRepo.AssertNumberOfCalls(t, "AddUser", 1)
+	mockRepo.AssertNumberOfCalls(t, "DeleteUser", 1)
 }

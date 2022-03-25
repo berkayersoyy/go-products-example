@@ -3,239 +3,143 @@ package handlers
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	mocks "github.com/berkayersoyy/go-products-example/pkg/mocks/handlers"
+	"github.com/berkayersoyy/go-products-example/pkg/models"
+	"github.com/gin-gonic/gin"
+	"github.com/jinzhu/gorm"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-
-	"github.com/berkayersoyy/go-products-example/pkg/database"
-	"github.com/berkayersoyy/go-products-example/pkg/dto"
-	"github.com/berkayersoyy/go-products-example/pkg/models"
-	"github.com/berkayersoyy/go-products-example/pkg/repositories"
-	"github.com/berkayersoyy/go-products-example/pkg/services"
-	"github.com/gin-gonic/gin"
-	"github.com/jinzhu/gorm"
-	"github.com/stretchr/testify/suite"
 )
 
-type SuiteTest struct {
-	suite.Suite
-	db *gorm.DB
-
-	userService services.UserService
-}
-
-func (suite *SuiteTest) SetupSuite() {
-	//TODO MOCK DB
-	db := database.ProvideMysqlClient("../../")
-	suite.db = db.GetClient()
-	suite.userService = services.ProvideUserService(repositories.ProvideUserRepository(suite.db))
-}
-func (suite *SuiteTest) TearDownTest() {
-
-}
-
-func (suite *SuiteTest) TearDownSuite() {
-	defer suite.db.Close()
-}
-
-func TestSuite(t *testing.T) {
-	suite.Run(t, new(SuiteTest))
-}
-func (suite *SuiteTest) TestGetAllUsers() {
-	req, w := setGetAllUsersRouter(suite.db)
-	a := suite.Assert()
-
-	a.Equal(http.MethodGet, req.Method, "HTTP request method error")
-	a.Equal(http.StatusOK, w.Code, "HTTP request status code error")
-	body, err := ioutil.ReadAll(w.Body)
-	if err != nil {
-		a.Error(err)
-	}
-
-	actual := models.User{}
-	if err := json.Unmarshal(body, &actual); err != nil {
-		a.Error(err)
-	}
-	actual.Model = gorm.Model{}
-	expected := models.User{}
-	a.Equal(expected, actual)
-
-}
-func setGetAllUsersRouter(db *gorm.DB) (*http.Request, *httptest.ResponseRecorder) {
+func TestUserAPI_GetAllUsers(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	api := ProvideUserAPI(services.ProvideUserService(repositories.ProvideUserRepository(db)))
-	r.GET("/v1/users", api.GetAllUsers)
-	req, err := http.NewRequest(http.MethodGet, "/v1/users", nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Content-Type", "application/json")
+	t.Run("Success", func(t *testing.T) {
+		users := []models.User{{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}}
+		mockApi := mocks.UserAPI{}
+		mockApi.On("GetAllUsers", mock.Anything).Return(users)
 
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	return req, w
+		w := httptest.NewRecorder()
+		r := gin.Default()
+		r.GET("/v1/users", mockApi.GetAllUsers)
+		req, err := http.NewRequest(http.MethodGet, "/v1/users", nil)
+		req.Header.Set("Content-Type", "application/json")
+		assert.NoError(t, err)
+		r.ServeHTTP(w, req)
 
-}
-func (suite *SuiteTest) TestGetUserByID() {
-	req, w := setGetUserByIDRouter(suite.db, "/v1/users/1")
+		var respBody []models.User
+		err = json.NewDecoder(w.Body).Decode(&respBody)
+		assert.NoError(t, err)
 
-	a := suite.Assert()
-
-	a.Equal(http.MethodGet, req.Method, "HTTP request method error")
-	a.Equal(http.StatusOK, w.Code, "HTTP request status code error")
-
-	body, err := ioutil.ReadAll(w.Body)
-	if err != nil {
-		a.Error(err)
-	}
-
-	actual := models.User{}
-	if err := json.Unmarshal(body, &actual); err != nil {
-		a.Error(err)
-	}
-	actual.Model = gorm.Model{}
-	expected := models.User{}
-	a.Equal(expected, actual)
+		assert.Equal(t, 200, w.Code)
+		assert.Equal(t, users, respBody)
+		mockApi.AssertNumberOfCalls(t, "GetAllUsers", 1)
+	})
 
 }
-func setGetUserByIDRouter(db *gorm.DB, url string) (*http.Request, *httptest.ResponseRecorder) {
+func TestUserAPI_GetUserByID(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	api := ProvideUserAPI(services.ProvideUserService(repositories.ProvideUserRepository(db)))
-	r.GET("/v1/users/:id", api.GetUserByID)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		panic(err)
-	}
-	req.Header.Set("Content-Type", "application/json")
+	t.Run("Success", func(t *testing.T) {
+		users := []models.User{{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}}
+		mockApi := mocks.UserAPI{}
+		mockApi.On("GetUserByID", mock.Anything).Return(users)
 
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	return req, w
+		w := httptest.NewRecorder()
+		r := gin.Default()
+		r.Use(func(context *gin.Context) {
+			context.Set("id", uint(1))
+		})
+		r.GET("/v1/users/:id", mockApi.GetUserByID)
+		req, err := http.NewRequest(http.MethodGet, "/v1/users/1", nil)
+		req.Header.Set("Content-Type", "application/json")
+		assert.NoError(t, err)
+		r.ServeHTTP(w, req)
 
-}
+		var respBody []models.User
+		err = json.NewDecoder(w.Body).Decode(&respBody)
+		assert.NoError(t, err)
 
-func (suite *SuiteTest) TestAddUser() {
-	a := suite.Assert()
-	user := models.User{
-		Username: "test-username",
-		Password: "test-password",
-	}
-	reqBody, err := json.Marshal(user)
-	if err != nil {
-		a.Error(err)
-	}
-
-	req, w, err := setAddUserRouter(suite.db, bytes.NewBuffer(reqBody))
-
-	a.Equal(http.MethodPost, req.Method, "HTTP request method error")
-	a.Equal(http.StatusOK, w.Code, "HTTP request status code error")
-
-	body, err := ioutil.ReadAll(w.Body)
-	if err != nil {
-		a.Error(err)
-	}
-
-	actual := models.User{}
-	if err := json.Unmarshal(body, &actual); err != nil {
-		a.Error(err)
-	}
-	actual.Model = gorm.Model{}
-	expected := models.User{}
-	a.Equal(expected, actual)
+		assert.Equal(t, 200, w.Code)
+		assert.Equal(t, users, respBody)
+		mockApi.AssertNumberOfCalls(t, "GetUserByID", 1)
+	})
 
 }
-func setAddUserRouter(db *gorm.DB, body *bytes.Buffer) (*http.Request, *httptest.ResponseRecorder, error) {
+func TestUserAPI_AddUser(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	api := ProvideUserAPI(services.ProvideUserService(repositories.ProvideUserRepository(db)))
-	r.POST("/v1/users", api.AddUser)
-	req, err := http.NewRequest(http.MethodPost, "/v1/users", body)
-	if err != nil {
-		return req, httptest.NewRecorder(), err
-	}
+	t.Run("Success", func(t *testing.T) {
+		user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
+		mockApi := mocks.UserAPI{}
+		mockApi.On("AddUser", mock.Anything).Return(user)
 
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	return req, w, nil
+		w := httptest.NewRecorder()
+		r := gin.Default()
 
+		reqBody, err := json.Marshal(user)
+		assert.NoError(t, err)
+		r.POST("/v1/users", mockApi.AddUser)
+		req, err := http.NewRequest(http.MethodPost, "/v1/users", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		assert.NoError(t, err)
+		r.ServeHTTP(w, req)
+
+		var respBody models.User
+		err = json.NewDecoder(w.Body).Decode(&respBody)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 200, w.Code)
+		assert.Equal(t, user, respBody)
+		mockApi.AssertNumberOfCalls(t, "AddUser", 1)
+	})
 }
-func (suite *SuiteTest) TestUpdateUser() {
-	a := suite.Assert()
-	user := dto.UserDTO{
-		ID:       1,
-		Username: "test-username-changed",
-		Password: "test-password-changed",
-	}
-	reqBody, err := json.Marshal(user)
-	if err != nil {
-		a.Error(err)
-	}
-
-	req, w, err := setUpdateUserRouter(suite.db, bytes.NewBuffer(reqBody), "/v1/users/1")
-
-	a.Equal(http.MethodPut, req.Method, "HTTP request method error")
-	a.Equal(http.StatusOK, w.Code, "HTTP request status code error")
-
-	body, err := ioutil.ReadAll(w.Body)
-	if err != nil {
-		a.Error(err)
-	}
-
-	actual := models.User{}
-	if err := json.Unmarshal(body, &actual); err != nil {
-		a.Error(err)
-	}
-	actual.Model = gorm.Model{}
-	expected := models.User{}
-	a.Equal(expected, actual)
-
-}
-func setUpdateUserRouter(db *gorm.DB, body *bytes.Buffer, url string) (*http.Request, *httptest.ResponseRecorder, error) {
+func TestUserAPI_UpdateUser(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	api := ProvideUserAPI(services.ProvideUserService(repositories.ProvideUserRepository(db)))
-	r.PUT("/v1/users/:id", api.UpdateUser)
-	req, err := http.NewRequest(http.MethodPut, url, body)
-	if err != nil {
-		return req, httptest.NewRecorder(), err
-	}
+	t.Run("Success", func(t *testing.T) {
+		user := models.User{Username: "test-username", Password: "test-pass", Model: gorm.Model{ID: 1}}
+		mockApi := mocks.UserAPI{}
+		mockApi.On("UpdateUser", mock.Anything).Return(user)
 
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	return req, w, nil
+		w := httptest.NewRecorder()
+		r := gin.Default()
 
+		reqBody, err := json.Marshal(user)
+		assert.NoError(t, err)
+		r.PUT("/v1/users", mockApi.UpdateUser)
+		req, err := http.NewRequest(http.MethodPut, "/v1/users", bytes.NewBuffer(reqBody))
+		req.Header.Set("Content-Type", "application/json")
+		assert.NoError(t, err)
+		r.ServeHTTP(w, req)
+
+		var respBody models.User
+		err = json.NewDecoder(w.Body).Decode(&respBody)
+		assert.NoError(t, err)
+
+		assert.Equal(t, 200, w.Code)
+		assert.Equal(t, user, respBody)
+		mockApi.AssertNumberOfCalls(t, "UpdateUser", 1)
+	})
 }
-
-func (suite *SuiteTest) TestDeleteUser() {
-	a := suite.Assert()
-
-	req, w, err := setDeleteUserRouter(suite.db, "/v1/users/1")
-
-	if err != nil {
-		a.Error(err)
-	}
-	a.Equal(http.MethodDelete, req.Method, "HTTP request method error")
-	a.Equal(http.StatusOK, w.Code, "HTTP request status code error")
-
-}
-func setDeleteUserRouter(db *gorm.DB, url string) (*http.Request, *httptest.ResponseRecorder, error) {
+func TestUserAPI_DeleteUser(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	r := gin.New()
-	api := ProvideUserAPI(services.ProvideUserService(repositories.ProvideUserRepository(db)))
-	r.DELETE("/v1/users/:id", api.DeleteUser)
-	req, err := http.NewRequest(http.MethodDelete, url, nil)
-	if err != nil {
-		return req, httptest.NewRecorder(), err
-	}
+	t.Run("Success", func(t *testing.T) {
+		mockApi := mocks.UserAPI{}
+		mockApi.On("DeleteUser", mock.Anything)
 
-	req.Header.Set("Content-Type", "application/json")
-	w := httptest.NewRecorder()
-	r.ServeHTTP(w, req)
-	return req, w, nil
+		w := httptest.NewRecorder()
+		r := gin.Default()
+		r.Use(func(context *gin.Context) {
+			context.Set("id", uint(1))
+		})
 
+		r.DELETE("/v1/users/:id", mockApi.DeleteUser)
+		req, err := http.NewRequest(http.MethodDelete, "/v1/users/1", nil)
+		req.Header.Set("Content-Type", "application/json")
+		assert.NoError(t, err)
+		r.ServeHTTP(w, req)
+
+		assert.Equal(t, 200, w.Code)
+		mockApi.AssertNumberOfCalls(t, "DeleteUser", 1)
+	})
 }
