@@ -1,8 +1,12 @@
 package database
 
 import (
-	config "github.com/berkayersoyy/go-products-example/pkg/utils/config"
+	"context"
 	"github.com/go-redis/redis/v7"
+	"github.com/sethvargo/go-retry"
+	"log"
+	"os"
+	"time"
 )
 
 type RedisClient interface {
@@ -21,16 +25,22 @@ func (r *redisClient) GetClient() *redis.Client {
 }
 
 func InitRedis() *redis.Client {
-	conf, err := config.LoadConfig("./")
-	if err != nil {
-		panic(err)
-	}
+	//conf, err := config.LoadConfig("./")
+	//if err != nil {
+	//	panic(err)
+	//}
+	DSN := os.Getenv("REDIS_HOST")
 	client := redis.NewClient(&redis.Options{
-		Addr: conf.RedisHost,
+		Addr: DSN,
 	})
-	_, err = client.Ping().Result()
-	if err != nil {
-		panic(err)
+	ctx := context.Background()
+	if err := retry.Fibonacci(ctx, 1*time.Second, func(ctx context.Context) error {
+		if _, err := client.Ping().Result(); err != nil {
+			return retry.RetryableError(err)
+		}
+		return nil
+	}); err != nil {
+		log.Fatal(err)
 	}
 	return client
 }

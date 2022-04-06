@@ -8,36 +8,40 @@ services:
       context: .
       dockerfile: ./Dockerfile
     ports:
-      - 8080:8080
+      - "8080:8080"
     environment:
-      REDIS_HOST: redis://redis:6379/
-      MYSQL_DSN: "root:x03121998X@tcp(mysql:3306)/godb"
-    depends_on:
-      - redis
-      - mysql
+      REDIS_HOST: redis://redis
+      MYSQL_DSN: "root:12345@tcp(172.26.0.3:3306)/godb?charset=utf8mb4&parseTime=True&loc=Local"
     links:
-      - redis
       - mysql
+    depends_on:
+      - mysql
+      - redis
   redis:
     container_name: redis
     image: redis
-    hostname: redis
     restart: always
     ports:
       - "6379:6379"
     command: redis-server
   mysql:
-    image: mysql
-    container_name: mysql
-    hostname: mysql
+    image: mysql:latest
+    container_name: mysqldb
+    platform: linux/x86_64
     ports:
       - "3306:3306"
-
+    expose:
+      - "3306"
     environment:
-      MYSQL_USER: root
-      MYSQL_PASSWORD: x03121998X
-      MYSQL_ROOT_PASSWORD: x03121998X
+      MYSQL_PASSWORD: 12345
+      MYSQL_ROOT_PASSWORD: 12345
       MYSQL_DATABASE: godb
       MYSQL_HOST: mysql
-    healthcheck:
-      test: mysqladmin ping -h 127.0.0.1 -u $$root --password=$$x03121998X
+      MYSQL_PORT: 3306
+    volumes:
+      - db-data:/var/lib/mysql
+    cap_add:
+      - SYS_NICE
+volumes:
+  db-data:
+    driver: local

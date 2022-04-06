@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	_ "github.com/berkayersoyy/go-products-example/docs"
 	"github.com/berkayersoyy/go-products-example/pkg/database"
 	"github.com/berkayersoyy/go-products-example/pkg/handlers"
@@ -78,13 +79,15 @@ func setup(db *gorm.DB) *gin.Engine {
 // @BasePath /
 // @schemes http
 func main() {
+	fmt.Println("first")
 	dbClient := database.ProvideMysqlClient("./")
 	db := dbClient.GetClient()
 	defer db.Close()
 	r := setup(db)
 	err := r.Run()
 	if err != nil {
+		fmt.Println(err)
 		panic(err)
 	}
-
+	fmt.Println("inside")
 }

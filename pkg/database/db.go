@@ -1,10 +1,11 @@
 package database
 
 import (
+	"fmt"
 	"github.com/berkayersoyy/go-products-example/pkg/models"
-	config "github.com/berkayersoyy/go-products-example/pkg/utils/config"
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/jinzhu/gorm"
+	"os"
 )
 
 type mysqlClient struct {
@@ -23,14 +24,29 @@ func (m *mysqlClient) GetClient() *gorm.DB {
 }
 
 func InitDb(path string) *gorm.DB {
-	conf, err := config.LoadConfig(path)
+	DSN := os.Getenv("MYSQL_DSN")
+
+	//conf, err := config.LoadConfig(path)
+	//if err != nil {
+	//	panic(err)
+	//}
+	db, err := gorm.Open("mysql", DSN)
+	//ctx := context.Background()
+	//if err := retry.Fibonacci(ctx, 1*time.Second, func(ctx context.Context) error {
+	//	if err := db.DB().Ping(); err != nil {
+	//		fmt.Println(err)
+	//
+	//		return retry.RetryableError(err)
+	//	}
+	//	return nil
+	//}); err != nil {
+	//	log.Fatal(err)
+	//}
 	if err != nil {
+		fmt.Println(err)
 		panic(err)
 	}
-	db, err := gorm.Open("mysql", conf.MysqlDSN)
-	if err != nil {
-		panic(err)
-	}
+
 	db.DB().SetMaxOpenConns(10)
 	db.DB().SetMaxIdleConns(5)
 
